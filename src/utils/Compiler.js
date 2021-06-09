@@ -1,9 +1,7 @@
 const solc = require('solc');
 const CompilerError = require('../exceptions/CompilerError');
-const NotFoundError = require('../exceptions/NotFoundError');
 const Replacer = require('./Replacer');
 const ReplacerError = require('../exceptions/ReplacerError');
-const versions = require('../../config/version');
 
 module.exports = class Compiler {
   constructor() {
@@ -15,17 +13,14 @@ module.exports = class Compiler {
     };
     this.regex = /__REPLACE_(\w+)__/gi;
     this.replacer = new Replacer(this.regex);
+    this.result = {};
     this.sources = [];
-    this.version = 'v0.5.12+commit.7709ece9';
   }
 
   compile = (source = null) => {
-    if (source && Array.isArray(source)) {
-      // while source is provided and the source type is an
-      // array we'll assume that u want to compile the
-      // source with '_compileFromSources' method
-      this.setSources(source).#_compileFromSources();
-      return null;
+    if (source && !Array.isArray(source)) {
+      const message = 'Compiling is only support array sources.';
+      throw new CompilerError(message);
     }
 
     if (!source) {
@@ -33,10 +28,19 @@ module.exports = class Compiler {
       // that u want to compile the source from the
       // sources object by calling the 'setSources'
       this.#_compileFromSources();
-      return null;
     }
 
-    return this.#_compileFromSource(source);
+    if (source && Array.isArray(source)) {
+      // while source is provided and the source type is an
+      // array we'll assume that u want to compile the
+      // source with '_compileFromSources' method
+      this.setSources(source).#_compileFromSources();
+    }
+
+    this.#_resolveInput();
+    this.#_compile();
+
+    return this.#_pullResult();
   };
 
   setReplacer = (replacer) => {
@@ -71,21 +75,28 @@ module.exports = class Compiler {
     return this;
   };
 
-  setVersion = (version) => {
-    const v = versions.find((ver) => ver.includes(version));
-
-    if (!v) {
-      const message = `Can't find compiler version at: ${version}`;
-      throw new NotFoundError(message);
+  #_compile = () => {
+    if (!this.compiler) {
+      const message = 'Please provide any compiler to compile the sources.';
+      throw new CompilerError(message);
     }
 
-    this.version = v;
-    return this;
-  };
+    const input = JSON.stringify(this.input);
+    const compiled = JSON.parse(this.compiler.compile(input));
+    const symbol = this.replacer.getRule('token.symbol');
 
-  #_compileFromSource = (source) => {
-    const compiled = this.replacer.replace(source);
-    return compiled;
+    for (const contract in compiled.contracts) {
+      const id = contract.replace('.sol', '');
+      let selected = null;
+
+      if (id === 'Token') selected = compiled.contracts[contract][symbol];
+      else selected = compiled.contracts[contract][id];
+
+      this.result[id] = {
+        abi: selected.abi,
+        bytecode: selected.evm.bytecode.object,
+      };
+    }
   };
 
   #_compileFromSources = () => {
@@ -96,32 +107,40 @@ module.exports = class Compiler {
     this.sources.forEach((source, id) => {
       this.sources[id] = {
         ...source,
-        content: this.#_compileFromSource(source.content),
+        content: this.#_compileSourceContent(source.content),
       };
     });
 
     return null;
   };
 
-  #_resolveCompilerInstance = () => {
-    solc.loadRemoteVersion(this.version, (err, snapshot) => {
-      if (err) {
-        const { message } = err;
-        throw new CompilerError(message);
-      }
+  #_compileSourceContent = (source) => {
+    const compiled = this.replacer.replace(source);
+    return compiled;
+  };
 
-      this.compiler = snapshot;
-    });
+  #_pullResult = () => {
+    const { result } = this;
+    this.result = {};
 
-    return null;
+    return result;
+  };
+
+  #_pullSources = () => {
+    const { sources } = this;
+    this.sources = [];
+
+    return sources;
   };
 
   #_resolveInput = () => {
-    if (!this.sources.length) {
+    const sources = this.#_pullSources();
+
+    if (!sources.length) {
       return null;
     }
 
-    this.sources.forEach((source) => {
+    sources.forEach((source) => {
       const { content, name } = source;
       this.input.sources[name] = { content };
     });
