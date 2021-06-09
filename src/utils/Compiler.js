@@ -1,4 +1,5 @@
 const Replacer = require('./Replacer');
+const ReplacerError = require('../exceptions/ReplacerError');
 
 module.exports = class Compiler {
   constructor() {
@@ -30,6 +31,16 @@ module.exports = class Compiler {
     }
 
     return this.#_compileFromSource(source);
+  };
+
+  setReplacer = (replacer) => {
+    if (replacer instanceof Replacer) {
+      this.replacer = replacer;
+      return this;
+    }
+
+    const message = 'Your replacer must be follow the Replacer instance.';
+    throw new ReplacerError(message);
   };
 
   setRules = (rules) => {
