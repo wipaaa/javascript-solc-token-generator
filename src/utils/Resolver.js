@@ -20,7 +20,7 @@ module.exports = class Resolver {
     };
   }
 
-  from = (pathToDirectory) => {
+  setFrom = (pathToDirectory) => {
     if (this.#_isNotExists(pathToDirectory)) {
       throw new NotFoundError(`Directory isn't exists at: ${pathToDirectory}.`);
     }
