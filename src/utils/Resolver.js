@@ -27,7 +27,7 @@ module.exports = class Resolver {
 
     this.sources = this.#_readFilesFrom(pathToDirectory, (source) => {
       const name = this.#_getFormattedFilename(source);
-      const actualPath = this.#_getActualPath(pathToDirectory);
+      const actualPath = this.#_getActualPath(pathToDirectory, source);
 
       return this.#_mergeWithDefaultData({ name, path: actualPath });
     });
