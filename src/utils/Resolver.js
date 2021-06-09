@@ -20,6 +20,37 @@ module.exports = class Resolver {
     };
   }
 
+  from = (pathToDirectory) => {
+    if (this.#_isNotExists(pathToDirectory)) {
+      throw new NotFoundError(`Directory isn't exists at: ${pathToDirectory}.`);
+    }
+
+    this.sources = this.#_readFilesFrom(pathToDirectory, (source) => {
+      const name = this.#_getFormattedFilename(source);
+      const actualPath = this.#_getActualPath(pathToDirectory);
+
+      return this.#_mergeWithDefaultData({ name, path: actualPath });
+    });
+
+    return this;
+  };
+
+  resolve = (pathToFile = null) => {
+    if (!pathToFile) {
+      // while path to the file is not specified, we'll asume
+      // that u want to resolve the file from the sources
+      // provided by calling the 'from' method.
+      this.#_resolveFromSources();
+      return this.#_pullSources();
+    }
+
+    if (pathToFile && typeof pathToFile !== 'string') {
+      throw new TypeError('Invalid type of parameter, expected to be String.');
+    }
+
+    return this.#_resolveFromFile(pathToFile);
+  };
+
   #_getActualPath = (...pathSegments) => path.resolve('src', ...pathSegments);
 
   #_getFormattedFilename = (filename) => {
@@ -58,16 +89,17 @@ module.exports = class Resolver {
 
   #_resolveFromFile = (pathToFile) => {
     if (this.#_isNotExists(pathToFile)) {
-      throw new NotFoundError(`File isn't exists at: ${pathToFile}`);
+      throw new NotFoundError(`File isn't exists at: ${pathToFile}.`);
     }
 
     const name = this.#_getFormattedFilename(path.basename(pathToFile));
     const content = this.#_readContentFrom(pathToFile);
+    const actualPath = this.#_getActualPath(pathToFile);
 
     return this.#_mergeWithDefaultData({
       name,
       content,
-      path: path.dirname(pathToFile),
+      path: actualPath,
     });
   };
 
