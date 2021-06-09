@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 module.exports = {
-  WEB3_URI_PROVIDER: process.env.WEB3_URI_PROVIDER || 'http://localhost:8545',
-  WEB3_USER_PRIVATE_KEY: process.env.WEB3_USER_PRIVATE_KEY,
+  WEB3_PROVIDER_LOCAL: process.env.WEB3_PROVIDER_LOCAL,
+  WEB3_PROVIDER_REMOTE: process.env.WEB3_PROVIDER_REMOTE,
+  WEB3_ACC_PRIVATE_KEY: process.env.WEB3_ACC_PRIVATE_KEY,
 };
