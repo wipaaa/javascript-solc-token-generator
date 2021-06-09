@@ -4,6 +4,11 @@ module.exports = class Replacer {
     this.regex = regex;
   }
 
+  getRule = (key) => {
+    const keys = key.toLowerCase().split('.');
+    return this.#_getTokenizerReplacement(keys) ?? null;
+  };
+
   replace = (source) => {
     const result = source.replace(this.regex, (match) => {
       const tokenizer = this.#_getTokenizerProperties(match);
