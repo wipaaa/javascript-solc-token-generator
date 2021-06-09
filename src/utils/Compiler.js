@@ -1,16 +1,22 @@
+const solc = require('solc');
+const CompilerError = require('../exceptions/CompilerError');
+const NotFoundError = require('../exceptions/NotFoundError');
 const Replacer = require('./Replacer');
 const ReplacerError = require('../exceptions/ReplacerError');
+const versions = require('../../config/version');
 
 module.exports = class Compiler {
   constructor() {
+    this.compiler = solc;
     this.input = {
       language: 'Solidity',
-      sources: [],
+      sources: {},
       settings: { outputSelection: { ['*']: { ['*']: ['*'] } } },
     };
     this.regex = /__REPLACE_(\w+)__/gi;
     this.replacer = new Replacer(this.regex);
     this.sources = [];
+    this.version = 'v0.5.12+commit.7709ece9';
   }
 
   compile = (source = null) => {
@@ -65,6 +71,18 @@ module.exports = class Compiler {
     return this;
   };
 
+  setVersion = (version) => {
+    const v = versions.find((ver) => ver.includes(version));
+
+    if (!v) {
+      const message = `Can't find compiler version at: ${version}`;
+      throw new NotFoundError(message);
+    }
+
+    this.version = v;
+    return this;
+  };
+
   #_compileFromSource = (source) => {
     const compiled = this.replacer.replace(source);
     return compiled;
@@ -80,6 +98,32 @@ module.exports = class Compiler {
         ...source,
         content: this.#_compileFromSource(source.content),
       };
+    });
+
+    return null;
+  };
+
+  #_resolveCompilerInstance = () => {
+    solc.loadRemoteVersion(this.version, (err, snapshot) => {
+      if (err) {
+        const { message } = err;
+        throw new CompilerError(message);
+      }
+
+      this.compiler = snapshot;
+    });
+
+    return null;
+  };
+
+  #_resolveInput = () => {
+    if (!this.sources.length) {
+      return null;
+    }
+
+    this.sources.forEach((source) => {
+      const { content, name } = source;
+      this.input.sources[name] = { content };
     });
 
     return null;
