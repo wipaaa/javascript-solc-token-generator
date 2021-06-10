@@ -4,6 +4,7 @@ const ContractError = require('../exceptions/ContractError');
 
 const {
   WEB3_PROVIDER_LOCAL,
+  WEB3_ACC_ADDRESS,
   WEB3_ACC_PRIVATE_KEY,
 } = require('../../config/env');
 
@@ -25,6 +26,7 @@ module.exports = class Provider {
 
     this.instance = new Web3(provider);
     this.accounts = await this.instance.eth.getAccounts();
+    this.instance.defaultAccount = WEB3_ACC_ADDRESS;
 
     return this;
   };
