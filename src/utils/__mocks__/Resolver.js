@@ -43,7 +43,7 @@ module.exports = class Resolver {
 
       return {
         name: source.replace(extension.from, extension.to),
-        content: null,
+        content: `This is the ${source} content.`,
         path: actualPath,
       };
     });
