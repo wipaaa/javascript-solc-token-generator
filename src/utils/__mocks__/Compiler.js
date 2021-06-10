@@ -24,7 +24,7 @@ module.exports = class Compiler {
       const { name = null, content = null } = source;
 
       const abi = [];
-      const bytecode = Buffer(content).toString('hex');
+      const bytecode = Buffer.from(content).toString('hex');
       const metadata = {};
 
       result[name] = {
