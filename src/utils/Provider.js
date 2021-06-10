@@ -59,7 +59,7 @@ module.exports = class Provider {
     return receipt;
   };
 
-  stop = () => {
+  disconnect = () => {
     if (!this.instance.currentProvider) {
       return null;
     }
