@@ -1,11 +1,26 @@
 const Compiler = require('../Compiler');
 const Replacer = require('../Replacer');
+const Resolver = require('../Resolver');
+
+const rules = {
+  token: {
+    name: 'GANA Token',
+    symbol: 'GANAx',
+    decimals: 18,
+    supply: {
+      max: 0,
+      total: 10,
+    },
+  },
+};
 
 jest.mock('../Compiler');
 jest.mock('../Replacer');
+jest.mock('../Resolver');
 
 describe('Compiler utility', () => {
   let compiler = null;
+  let resolver = new Resolver();
 
   beforeAll(() => {
     compiler = new Compiler();
@@ -51,22 +66,17 @@ describe('Compiler utility', () => {
     });
 
     it('should return a valid object', () => {
-      const source = {
-        name: 'example',
-        abi: [],
-        bytecode: 'bytecode',
-        metadata: {},
-      };
+      const sources = resolver.setFrom('../stub').resolve();
+      const result = compiler.compile(sources);
 
-      const result = compiler.compile([source]);
+      expect(resolver.setFrom).toHaveBeenCalled();
+      expect(resolver.setFrom).toHaveReturned();
+      expect(resolver.resolve).toHaveBeenCalled();
+      expect(resolver.resolve).toHaveReturned();
 
       expect(compiler.compile).toHaveBeenCalled();
-      expect(compiler.compile).toHaveBeenCalledWith([source]);
-      expect(result[source.name]).toEqual({
-        abi: source.abi,
-        bytecode: source.bytecode,
-        metadata: source.metadata,
-      });
+      expect(compiler.compile).toHaveBeenCalledWith(sources);
+      expect(result).toMatchSnapshot();
     });
   });
 
@@ -85,15 +95,23 @@ describe('Compiler utility', () => {
     });
 
     it('should return compiler object while success', () => {
-      const result = compiler.setReplacer(new Replacer());
+      const replacer = new Replacer(compiler.regex);
+      const result = compiler.setReplacer(replacer);
 
       expect(compiler.setReplacer).toHaveBeenCalled();
+      expect(compiler.replacer).toBeInstanceOf(Replacer);
       expect(result).toBeInstanceOf(Compiler);
     });
   });
 
   describe('when setRules method is called', () => {
+    afterEach(() => {
+      expect(compiler.setRules).toHaveBeenCalled();
+      expect(compiler.setRules).toHaveReturned();
+    });
+
     beforeEach(() => {
+      compiler.replacer.setRules.mockClear();
       compiler.setRules.mockClear();
     });
 
@@ -102,15 +120,27 @@ describe('Compiler utility', () => {
       expect(compiler.setRules).toHaveBeenCalled();
     });
 
-    it('should return compiler object while success', () => {
-      const result = compiler.setReplacer(new Replacer());
+    it('should change the replacer rules', () => {
+      compiler.setRules(rules);
 
-      expect(compiler.setReplacer).toHaveBeenCalled();
+      expect(compiler.replacer.setRules).toHaveBeenCalled();
+      expect(compiler.replacer.setRules).toHaveBeenCalledWith(rules);
+      expect(compiler.replacer.rules).toEqual(rules);
+
+      compiler.replacer.setRules.mockClear();
+    });
+
+    it('should return compiler object while success', () => {
+      const result = compiler.setRules(rules);
       expect(result).toBeInstanceOf(Compiler);
     });
   });
 
   describe('when setSources method is called', () => {
+    afterEach(() => {
+      expect(compiler.setSources).toHaveBeenCalled();
+    });
+
     beforeEach(() => {
       compiler.setSources.mockClear();
     });
@@ -120,27 +150,28 @@ describe('Compiler utility', () => {
 
       expect(() => compiler.setSources({})).toThrow();
       expect(() => compiler.setSources({})).toThrow(errorMessage);
-      expect(compiler.setSources).toHaveBeenCalled();
-      expect(compiler.setSources).toHaveBeenCalledTimes(2);
       expect(compiler.setSources).toHaveBeenCalledWith({});
     });
 
     it('should return compiler object when empty array passed', () => {
       const result = compiler.setSources([]);
 
-      expect(compiler.setSources).toHaveBeenCalled();
       expect(compiler.setSources).toHaveBeenCalledWith([]);
       expect(compiler.sources).toEqual([]);
       expect(result).toBeInstanceOf(Compiler);
     });
 
     it('should change the sources property when provided with valid sources', () => {
-      const result = compiler.setSources([{}]);
+      const sources = resolver.setFrom('../stub').resolve();
+      const result = compiler.setSources(sources);
 
-      expect(compiler.setSources).toHaveBeenCalled();
-      expect(compiler.setSources).toHaveBeenCalledWith([{}]);
-      expect(compiler.sources).toEqual([{}]);
+      expect(resolver.resolve).toHaveBeenCalled();
+      expect(resolver.setFrom).toHaveBeenCalled();
+      expect(compiler.setSources).toHaveReturned();
+      expect(compiler.sources).toMatchSnapshot();
       expect(result).toBeInstanceOf(Compiler);
+
+      resolver.setFrom.mockClear();
     });
   });
 });
