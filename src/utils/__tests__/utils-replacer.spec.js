@@ -1,5 +1,8 @@
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import Replacer from '../Replacer';
 
+const regex = /__REPLACE_(\w+)__/gi;
 const rules = {
   token: {
     name: 'GANA Token',
@@ -12,91 +15,112 @@ const rules = {
   },
 };
 
-jest.mock('../Replacer');
-
-describe('Replacer utility', () => {
+describe('Resolver utility testing', () => {
   let replacer = null;
 
   beforeAll(() => {
-    replacer = new Replacer(/__REPLACE_(\w+)__/gi);
+    replacer = new Replacer(regex);
+
+    jest.spyOn(replacer, 'getRule');
+    jest.spyOn(replacer, 'replace');
+    jest.spyOn(replacer, 'setRules');
   });
 
   describe('when instantiated', () => {
-    it('should be an a truthy', () => {
-      expect(replacer).not.toBeFalsy();
-      expect(replacer).not.toBeNull();
-      expect(replacer).not.toBeUndefined();
-    });
-
-    it('should be a valid instance', () => {
+    it('should be an instance of replacer class', () => {
+      expect(replacer).toBeTruthy();
       expect(replacer).toBeInstanceOf(Replacer);
     });
 
-    it('should contain a valid property', () => {
-      expect(replacer).toHaveProperty('regex', /__REPLACE_(\w+)__/gi);
+    it('should have property regex', () => {
+      expect(replacer).toHaveProperty('regex', regex);
+    });
+
+    it('should have property rules', () => {
       expect(replacer).toHaveProperty('rules', {});
     });
   });
 
-  describe('when getRule method called', () => {
-    afterEach(() => {
-      expect(replacer.getRule).toHaveBeenCalled();
-    });
-
+  describe('when getRule method is called', () => {
     beforeEach(() => {
       replacer.getRule.mockClear();
     });
 
     it('should not throw any error', () => {
-      expect(() => replacer.getRule([])).not.toThrow();
-      expect(replacer.getRule).toHaveBeenCalledWith([]);
+      expect(() => replacer.getRule('fake.rule')).not.toThrow();
+      expect(replacer.getRule).toHaveBeenCalled();
     });
 
-    it('should return falsy value when rule not found', () => {
-      expect(replacer.getRule([])).toBeFalsy();
-      expect(replacer.getRule).toHaveBeenCalledWith([]);
+    it("should return null when no rule's match", () => {
+      const result = replacer.getRule('fake.rule');
+
+      expect(replacer.getRule).toHaveBeenCalled();
+      expect(replacer.getRule).toHaveBeenCalledWith('fake.rule');
+      expect(replacer.getRule).toHaveReturned();
+      expect(result).toBeNull();
     });
 
-    it('should return actual value when rules is specified', () => {
+    it("should return the rule when rule's match", () => {
       replacer.setRules(rules);
+      const result = replacer.getRule('token.symbol');
 
-      const result = replacer.getRule(['token', 'symbol']);
-
-      expect(result).toBeTruthy();
-      expect(result).toMatch('GANAx');
-      expect(replacer.getRule).toHaveBeenCalledWith([]);
+      expect(replacer.getRule).toHaveBeenCalled();
+      expect(replacer.getRule).toHaveBeenCalledWith('token.symbol');
+      expect(replacer.getRule).toHaveReturned();
+      expect(result).toMatch(rules.token.symbol);
 
       replacer.setRules.mockClear();
     });
   });
 
-  describe('when setRules method called', () => {
-    afterEach(() => {
-      expect(replacer.setRules).toHaveBeenCalled();
-      expect(replacer.setRules).toHaveReturned();
+  describe('when replace method is called', () => {
+    beforeEach(() => {
+      replacer.getRule.mockClear();
+      replacer.replace.mockClear();
+      replacer.setRules.mockClear();
     });
 
+    it('should not to throw any error', () => {
+      expect(() => replacer.replace('')).not.toThrow();
+      expect(replacer.replace).toHaveBeenCalled();
+    });
+
+    it('should match the snapshot of return value provided', () => {
+      const path = resolve('src', '../stub/Token.txt');
+      const source = readFileSync(path, 'utf-8');
+      const result = replacer.replace(source);
+
+      expect(replacer.replace).toHaveBeenCalled();
+      expect(replacer.replace).toHaveReturned();
+      expect(result).toMatchSnapshot();
+    });
+  });
+
+  describe('when setRules method is called', () => {
     beforeEach(() => {
       replacer.setRules.mockClear();
     });
 
     it('should not throw any error', () => {
-      expect(() => replacer.setRules({})).not.toThrow();
-      expect(replacer.setRules).toHaveBeenCalledWith({});
+      expect(() => replacer.setRules(rules)).not.toThrow();
+      expect(replacer.setRules).toHaveBeenCalled();
     });
 
-    it('should return replacer object while success', () => {
-      const result = replacer.setRules({});
+    it('should return the replacer object itself', () => {
+      const instance = replacer.setRules(rules);
 
-      expect(result).toBeInstanceOf(Replacer);
-      expect(replacer.setRules).toHaveBeenCalledWith({});
-      expect(replacer.setRules).toHaveReturnedWith(replacer);
+      expect(replacer.setRules).toHaveBeenCalled();
+      expect(replacer.setRules).toHaveReturned();
+      expect(instance).toBeInstanceOf(Replacer);
     });
 
-    it('should change the rules property', () => {
+    it('should change the replacer rules property', () => {
       replacer.setRules(rules);
 
-      expect(replacer.rules).toBeTruthy();
+      expect(replacer.setRules).toHaveBeenCalled();
+      expect(replacer.setRules).toHaveBeenCalledWith(rules);
+      expect(replacer.setRules).toHaveReturned();
+      expect(replacer.rules).not.toEqual({});
       expect(replacer.rules).toEqual(rules);
     });
   });
