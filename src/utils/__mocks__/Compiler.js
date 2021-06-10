@@ -21,12 +21,11 @@ module.exports = class Compiler {
     const result = {};
 
     (sources ?? this.sources).forEach((source) => {
-      const {
-        abi = null,
-        bytecode = null,
-        metadata = null,
-        name = null,
-      } = source;
+      const { name = null, content = null } = source;
+
+      const abi = [];
+      const bytecode = Buffer(content).toString('hex');
+      const metadata = {};
 
       result[name] = {
         abi,
