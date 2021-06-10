@@ -1,4 +1,4 @@
-const Resolver = require('../Resolver');
+import Resolver from '../Resolver';
 
 const defaults = {
   charset: 'utf-8',

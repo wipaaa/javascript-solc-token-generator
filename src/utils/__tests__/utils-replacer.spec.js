@@ -1,4 +1,4 @@
-const Replacer = require('../Replacer');
+import Replacer from '../Replacer';
 
 const rules = {
   token: {

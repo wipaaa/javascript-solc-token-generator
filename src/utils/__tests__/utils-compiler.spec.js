@@ -1,6 +1,6 @@
-const Compiler = require('../Compiler');
-const Replacer = require('../Replacer');
-const Resolver = require('../Resolver');
+import Compiler from '../Compiler';
+import Replacer from '../Replacer';
+import Resolver from '../Resolver';
 
 const rules = {
   token: {

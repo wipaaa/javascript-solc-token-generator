@@ -1,18 +1,16 @@
-const Replacer = require('../Replacer');
+import Replacer from '../Replacer';
 
 jest.mock('../Replacer');
 
-module.exports = class Compiler {
-  constructor() {
-    this.compiler = null;
-    this.input = {};
-    this.regex = /__REPLACE_(\w+)__/gi;
-    this.replacer = null;
-    this.result = {};
-    this.sources = [];
-  }
+export default jest.fn().mockImplementation(function () {
+  this.compiler = null;
+  this.input = {};
+  this.regex = /__REPLACE_(\w+)__/gi;
+  this.replacer = null;
+  this.result = {};
+  this.sources = [];
 
-  compile = jest.fn().mockImplementation((sources) => {
+  this.compile = jest.fn().mockImplementation((sources) => {
     if (sources && !Array.isArray(sources)) {
       const message = 'Compiling is only support array sources.';
       throw new Error(message);
@@ -37,7 +35,7 @@ module.exports = class Compiler {
     return result;
   });
 
-  setReplacer = jest.fn().mockImplementation((replacer) => {
+  this.setReplacer = jest.fn().mockImplementation((replacer) => {
     if (replacer instanceof Replacer) {
       this.replacer = replacer;
       return this;
@@ -47,12 +45,12 @@ module.exports = class Compiler {
     throw new Error(message);
   });
 
-  setRules = jest.fn().mockImplementation((rules) => {
+  this.setRules = jest.fn().mockImplementation((rules) => {
     this.replacer.setRules(rules);
     return this;
   });
 
-  setSources = jest.fn().mockImplementation((sources) => {
+  this.setSources = jest.fn().mockImplementation((sources) => {
     if (sources && !Array.isArray(sources)) {
       const message = 'Compiling is only support array sources.';
       throw new Error(message);
@@ -65,4 +63,4 @@ module.exports = class Compiler {
     this.sources = sources;
     return this;
   });
-};
+});
