@@ -1,5 +1,6 @@
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const Web3 = require('web3');
+const ContractError = require('../exceptions/ContractError');
 
 const {
   WEB3_PROVIDER_LOCAL,
@@ -28,35 +29,39 @@ module.exports = class Provider {
     return this;
   };
 
-  deploy = async (source) => {
+  deploy = async (source, option = {}) => {
     if (typeof source !== 'object') {
       const message = 'Expected contract parameter to be object.';
-      throw new TypeError(message);
+      throw new ContractError(message);
     }
 
     if (!source.abi && !source.bytecode) {
       const message = 'Please provide a valid contract object.';
-      throw new TypeError(message);
+      throw new ContractError(message);
     }
 
-    const GAS = 6721975;
-    const GAS_PRICE = await this.instance.eth.getGasPrice();
+    const { from = null, gas = null, gasPrice = null } = option;
+
+    const { abi, bytecode, metadata } = source;
+    const contract = new this.instance.eth.Contract(abi);
+
+    // gas and gas price estimation
+    const GAS = gas ?? (await this.#_getGasEstimation(bytecode, from));
+    const GAS_PRICE = gasPrice ?? (await this.#_getGasPrice());
     const GAS_IN_HEX = await this.instance.utils.toHex(GAS);
     const GAS_PRICE_IN_HEX = await this.instance.utils.toHex(GAS_PRICE);
 
-    const { abi, bytecode } = source;
-    const contract = new this.instance.eth.Contract(abi);
     const receipt = await contract
       .deploy({
-        data: bytecode,
+        data: `0x${bytecode}`,
       })
       .send({
-        from: this.accounts[0],
+        from: from ?? this.accounts[0],
         gas: GAS_IN_HEX,
         gasPrice: GAS_PRICE_IN_HEX,
       });
 
-    return receipt;
+    return { bytecode, receipt };
   };
 
   disconnect = () => {
@@ -66,5 +71,22 @@ module.exports = class Provider {
 
     this.instance.currentProvider.engine.stop();
     return null;
+  };
+
+  #_getGasEstimation = async (bytecode, address) => {
+    const from = address ?? this.accounts[0];
+    const data = bytecode;
+
+    const gas = await this.instance.eth.estimateGas({
+      from,
+      data,
+    });
+
+    return gas;
+  };
+
+  #_getGasPrice = async () => {
+    const gasPrice = await this.instance.eth.getGasPrice();
+    return gasPrice;
   };
 };
