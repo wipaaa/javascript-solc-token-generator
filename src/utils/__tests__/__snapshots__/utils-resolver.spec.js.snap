@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Resolver utility when resolve method called should return the sources object 1`] = `
+Array [
+  Object {
+    "content": null,
+    "name": "Context.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+  Object {
+    "content": null,
+    "name": "Ownable.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+  Object {
+    "content": null,
+    "name": "SafeMath.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+  Object {
+    "content": null,
+    "name": "Token.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+]
+`;
+
+exports[`Resolver utility when setFrom method called should change the sources property with directory files list 1`] = `
+Array [
+  Object {
+    "content": null,
+    "name": "Context.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+  Object {
+    "content": null,
+    "name": "Ownable.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+  Object {
+    "content": null,
+    "name": "SafeMath.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+  Object {
+    "content": null,
+    "name": "Token.sol",
+    "path": "/home/wipaaa/github/javascript-solc-token-generator/stub",
+  },
+]
+`;
