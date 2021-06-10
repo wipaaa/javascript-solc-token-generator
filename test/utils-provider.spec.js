@@ -15,7 +15,7 @@ describe('Provider utility', () => {
   describe('when attemp to connect to network', () => {
     let result;
 
-    afterAll(() => result.stop());
+    afterAll(() => result.disconnect());
 
     beforeAll(async () => {
       result = await provider.connect();
