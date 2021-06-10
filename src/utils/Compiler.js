@@ -95,6 +95,7 @@ module.exports = class Compiler {
       this.result[id] = {
         abi: selected.abi,
         bytecode: selected.evm.bytecode.object,
+        metadata: JSON.parse(selected.metadata),
       };
     }
   };
