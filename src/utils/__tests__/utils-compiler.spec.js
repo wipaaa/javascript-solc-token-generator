@@ -1,6 +1,9 @@
+import solc from 'solc';
 import Compiler from '../Compiler';
 import Replacer from '../Replacer';
-import Resolver from '../Resolver';
+
+jest.mock('solc');
+jest.mock('../Replacer');
 
 const rules = {
   token: {
@@ -14,164 +17,192 @@ const rules = {
   },
 };
 
-jest.mock('../Compiler');
-jest.mock('../Replacer');
-jest.mock('../Resolver');
+const sources = [
+  {
+    name: 'Name.sol',
+    content: '__REPLACE_TOKEN_NAME__',
+    path: '/path/to/Name.txt',
+  },
+  {
+    name: 'Symbol.sol',
+    content: '__REPLACE_TOKEN_SYMBOL__',
+    path: '/path/to/Symbol.txt',
+  },
+  {
+    name: 'Decimals.sol',
+    content: '__REPLACE_TOKEN_DECIMALS__',
+    path: '/path/to/Decimals.txt',
+  },
+  {
+    name: 'SupplyTotal.sol',
+    content: '__REPLACE_TOKEN_SUPPLY_TOTAL__',
+    path: '/path/to/SupplyTotal.txt',
+  },
+  {
+    name: 'SupplyMax.sol',
+    content: '__REPLACE_TOKEN_SUPPLY_MAX__',
+    path: '/path/to/SupplyMax.txt',
+  },
+];
 
-describe('Compiler utility', () => {
+const contracts = {};
+
+sources.forEach((source) => {
+  const name = source.name;
+  const id = source.name.replace('.sol', '');
+
+  contracts[name] = {};
+  contracts[name][id] = {};
+  contracts[name][id].abi = [];
+  contracts[name][id].evm = { bytecode: { object: '' } };
+  contracts[name][id].metadata = JSON.stringify({});
+});
+
+solc.compile
+  .mockName('solc.compile()')
+  .mockReturnValue(JSON.stringify({ contracts }));
+
+describe('Compiler utility test', () => {
   let compiler = null;
-  let resolver = new Resolver();
+  let replacer = null;
 
   beforeAll(() => {
     compiler = new Compiler();
+    replacer = new Replacer(compiler.regex);
   });
 
   describe('when instantiated', () => {
-    it('should be an a truthy', () => {
-      expect(compiler).not.toBeFalsy();
-      expect(compiler).not.toBeNull();
-      expect(compiler).not.toBeUndefined();
-    });
-
-    it('should be a valid instance', () => {
+    it('should be an instance of compiler class', () => {
+      expect(compiler).toBeTruthy();
       expect(compiler).toBeInstanceOf(Compiler);
     });
 
-    it('should contain a valid property', () => {
-      expect(compiler).toHaveProperty('compiler', null);
-      expect(compiler).toHaveProperty('input', {});
-      expect(compiler).toHaveProperty('regex', /__REPLACE_(\w+)__/gi);
-      expect(compiler).toHaveProperty('replacer', null);
+    it('should have property compiler', () => {
+      expect(compiler).toHaveProperty('compiler');
+    });
+
+    it('should have property input', () => {
+      expect(compiler).toHaveProperty('input');
+    });
+
+    it('should have property regex', () => {
+      expect(compiler).toHaveProperty('regex');
+    });
+
+    it('should have property replacer', () => {
+      expect(compiler).toHaveProperty('replacer');
+    });
+
+    it('should have property result', () => {
       expect(compiler).toHaveProperty('result', {});
+    });
+
+    it('should have property sources', () => {
       expect(compiler).toHaveProperty('sources', []);
     });
   });
 
   describe('when compile method called', () => {
-    beforeEach(() => {
-      compiler.compile.mockClear();
+    it("should throw error while provided argument's not an array", () => {
+      expect(() => compiler.compile({})).toThrow();
     });
 
-    it('should throw error while object type provided', () => {
-      const errorMessage = 'Compiling is only support array sources.';
-      expect(() => compiler.compile({})).toThrow(errorMessage);
+    it('should throw error while no compiler provided', () => {
+      const compilerBackup = compiler.compiler;
+      compiler.compiler = class FakeCompiler {};
+
+      expect(() => compiler.compile([])).toThrow();
+      compiler.compiler = compilerBackup;
     });
 
-    it('should return empty object while empty array is provided', () => {
-      const result = compiler.compile([]);
+    it('should match the compiled sources snapshot', () => {
+      const result = compiler.setSources(sources).compile();
 
-      expect(compiler.compile).toHaveBeenCalled();
-      expect(compiler.compile).toHaveBeenCalledWith([]);
-      expect(result).toEqual({});
-    });
-
-    it('should return a valid object', () => {
-      const sources = resolver.setFrom('../stub').resolve();
-      const result = compiler.compile(sources);
-
-      expect(resolver.setFrom).toHaveBeenCalled();
-      expect(resolver.setFrom).toHaveReturned();
-      expect(resolver.resolve).toHaveBeenCalled();
-      expect(resolver.resolve).toHaveReturned();
-
-      expect(compiler.compile).toHaveBeenCalled();
-      expect(compiler.compile).toHaveBeenCalledWith(sources);
+      expect(solc.compile).toHaveBeenCalled();
+      expect(solc.compile).toHaveReturned();
+      expect(solc.compile).toHaveReturnedWith(JSON.stringify({ contracts }));
+      expect(result).toBeTruthy();
       expect(result).toMatchSnapshot();
     });
   });
 
   describe('when setReplacer method called', () => {
-    beforeEach(() => {
-      compiler.setReplacer.mockClear();
+    it('should throw error when invalid replacer is provided', () => {
+      class FakeReplacer {}
+      expect(() => setReplacer(new FakeReplacer())).toThrow();
     });
 
-    it('should throw error while invalid replacer provided', () => {
-      const fakeReplacer = class FakeReplacer {};
-      const message = 'Your replacer must be follow the Replacer instance.';
+    it('should return the compiler object itself', () => {
+      const instance = compiler.setReplacer(replacer);
 
-      expect(() => compiler.setReplacer(fakeReplacer)).toThrow();
-      expect(() => compiler.setReplacer(fakeReplacer)).toThrow(message);
-      expect(compiler.setReplacer).toHaveBeenCalledWith(fakeReplacer);
+      expect(instance).toBeTruthy();
+      expect(instance).toBeInstanceOf(Compiler);
     });
 
-    it('should return compiler object while success', () => {
-      const replacer = new Replacer(compiler.regex);
-      const result = compiler.setReplacer(replacer);
+    it('should change the compiler replacer property', () => {
+      compiler.setReplacer(replacer);
 
-      expect(compiler.setReplacer).toHaveBeenCalled();
+      expect(compiler.replacer).toBeTruthy();
       expect(compiler.replacer).toBeInstanceOf(Replacer);
-      expect(result).toBeInstanceOf(Compiler);
     });
   });
 
-  describe('when setRules method is called', () => {
-    afterEach(() => {
-      expect(compiler.setRules).toHaveBeenCalled();
-      expect(compiler.setRules).toHaveReturned();
-    });
-
+  describe('when setRules method called', () => {
     beforeEach(() => {
-      compiler.replacer.setRules.mockClear();
-      compiler.setRules.mockClear();
+      replacer.rules = {};
+      replacer.setRules = jest
+        .fn()
+        .mockName('replacer.setRules()')
+        .mockImplementation((rules) => {
+          replacer.rules = rules;
+        });
     });
 
-    it('should not throw error', () => {
-      expect(() => compiler.setRules()).not.toThrow();
-      expect(compiler.setRules).toHaveBeenCalled();
+    it('should not throw any error', () => {
+      expect(() => compiler.setRules(rules)).not.toThrow();
     });
 
-    it('should change the replacer rules', () => {
+    it('should return the compiler object itself', () => {
+      const instance = compiler.setRules(rules);
+
+      expect(instance).toBeTruthy();
+      expect(instance).toBeInstanceOf(Compiler);
+    });
+
+    it('should change the compiler rules property', () => {
       compiler.setRules(rules);
 
-      expect(compiler.replacer.setRules).toHaveBeenCalled();
-      expect(compiler.replacer.setRules).toHaveBeenCalledWith(rules);
-      expect(compiler.replacer.rules).toEqual(rules);
-
-      compiler.replacer.setRules.mockClear();
-    });
-
-    it('should return compiler object while success', () => {
-      const result = compiler.setRules(rules);
-      expect(result).toBeInstanceOf(Compiler);
+      expect(replacer.setRules).toHaveBeenCalled();
+      expect(replacer.setRules).toHaveBeenCalledWith(rules);
+      expect(replacer.setRules).toHaveReturned();
+      expect(replacer.rules).toBeTruthy();
+      expect(replacer.rules).toEqual(rules);
     });
   });
 
-  describe('when setSources method is called', () => {
-    afterEach(() => {
-      expect(compiler.setSources).toHaveBeenCalled();
-    });
-
+  describe('when setSources method called', () => {
     beforeEach(() => {
-      compiler.setSources.mockClear();
+      compiler.sources = [];
     });
 
-    it('should not throw error', () => {
-      const errorMessage = 'Compiling is only support array sources.';
-
+    it("should not throw error while provided arguments is'nt an array", () => {
       expect(() => compiler.setSources({})).toThrow();
-      expect(() => compiler.setSources({})).toThrow(errorMessage);
-      expect(compiler.setSources).toHaveBeenCalledWith({});
     });
 
-    it('should return compiler object when empty array passed', () => {
-      const result = compiler.setSources([]);
+    it('should return compiler object itself', () => {
+      const instance = compiler.setSources(sources);
 
-      expect(compiler.setSources).toHaveBeenCalledWith([]);
-      expect(compiler.sources).toEqual([]);
-      expect(result).toBeInstanceOf(Compiler);
+      expect(instance).toBeTruthy();
+      expect(instance).toBeInstanceOf(Compiler);
     });
 
-    it('should change the sources property when provided with valid sources', () => {
-      const sources = resolver.setFrom('../stub').resolve();
-      const result = compiler.setSources(sources);
+    it('should change the sources property', () => {
+      compiler.setSources(sources);
 
-      expect(resolver.resolve).toHaveBeenCalled();
-      expect(resolver.setFrom).toHaveBeenCalled();
-      expect(compiler.setSources).toHaveReturned();
-      expect(compiler.sources).toMatchSnapshot();
-      expect(result).toBeInstanceOf(Compiler);
-
-      resolver.setFrom.mockClear();
+      expect(compiler.sources).toBeTruthy();
+      expect(compiler.sources).not.toEqual({});
+      expect(compiler.sources).not.toEqual([]);
+      expect(compiler.sources).toEqual(sources);
     });
   });
 });
