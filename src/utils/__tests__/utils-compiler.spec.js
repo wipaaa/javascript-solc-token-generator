@@ -1,3 +1,4 @@
+import { beforeEach, expect } from '@jest/globals';
 import solc from 'solc';
 import Compiler from '../Compiler';
 import Replacer from '../Replacer';
@@ -58,10 +59,6 @@ sources.forEach((source) => {
   contracts[name][id].metadata = JSON.stringify({});
 });
 
-solc.compile
-  .mockName('solc.compile()')
-  .mockReturnValue(JSON.stringify({ contracts }));
-
 describe('Compiler utility test', () => {
   let compiler = null;
   let replacer = null;
@@ -103,6 +100,25 @@ describe('Compiler utility test', () => {
   });
 
   describe('when compile method called', () => {
+    beforeEach(() => {
+      replacer.getRule
+        .mockName('Replacer.getRule()')
+        .mockReturnValue('Example');
+
+      replacer.replace
+        .mockName('Replacer.replace()')
+        .mockReturnValue('Example replaced source');
+
+      replacer.setRules
+        .mockName('Replacer.setRules()')
+        .mockImplementation((rules) => (replacer.rules = rules))
+        .mockReturnThis();
+
+      solc.compile
+        .mockName('solc.compile()')
+        .mockReturnValue(JSON.stringify({ contracts }));
+    });
+
     it("should throw error while provided argument's not an array", () => {
       expect(() => compiler.compile({})).toThrow();
     });
@@ -116,11 +132,24 @@ describe('Compiler utility test', () => {
     });
 
     it('should match the compiled sources snapshot', () => {
-      const result = compiler.setSources(sources).compile();
+      const result = compiler
+        .setReplacer(replacer)
+        .setRules(rules)
+        .setSources(sources)
+        .compile();
 
+      // test replacer method must be called
+      expect(replacer.getRule).toHaveBeenCalled();
+      expect(replacer.getRule).toHaveReturnedWith('Example');
+      expect(replacer.replace).toHaveBeenCalled();
+      expect(replacer.replace).toHaveReturnedWith('Example replaced source');
+
+      // test solc compile method must be called
       expect(solc.compile).toHaveBeenCalled();
       expect(solc.compile).toHaveReturned();
       expect(solc.compile).toHaveReturnedWith(JSON.stringify({ contracts }));
+
+      // test returned result
       expect(result).toBeTruthy();
       expect(result).toMatchSnapshot();
     });
