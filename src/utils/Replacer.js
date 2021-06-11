@@ -5,6 +5,10 @@ module.exports = class Replacer {
   }
 
   getRule = (key) => {
+    if (!key.includes('.')) {
+      return this.#_getTokenizerReplacement([key]);
+    }
+
     const keys = key.toLowerCase().split('.');
     return this.#_getTokenizerReplacement(keys) ?? null;
   };
