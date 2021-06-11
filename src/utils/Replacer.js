@@ -4,39 +4,39 @@ module.exports = class Replacer {
     this.regex = regex;
   }
 
-  getRule = (key) => {
+  getRule(key) {
     if (!key.includes('.')) {
       return this.#_getTokenizerReplacement([key]);
     }
 
     const keys = key.toLowerCase().split('.');
     return this.#_getTokenizerReplacement(keys) ?? null;
-  };
+  }
 
-  replace = (source) => {
+  replace(source) {
     const result = source.replace(this.regex, (match) => {
       const tokenizer = this.#_getTokenizerProperties(match);
       return this.#_getTokenizerReplacement(tokenizer);
     });
 
     return result;
-  };
+  }
 
-  setRules = (rules) => {
+  setRules(rules) {
     this.#_mergeReplacementRules(rules);
     return this;
-  };
+  }
 
-  #_getTokenizerProperties = (match) => {
+  #_getTokenizerProperties(match) {
     const result = match
-      .replace(/__REPLACE_|__/g, '')
+      .replace(/__REPLACE_|__/gi, '')
       .toLowerCase()
       .split('_');
 
     return result;
-  };
+  }
 
-  #_getTokenizerReplacement = (properties = [], rules = this.rules) => {
+  #_getTokenizerReplacement(properties = [], rules = this.rules) {
     const MIN_PROPERTIES_LENGTH_ALLOWED = 1;
 
     if (properties.length > MIN_PROPERTIES_LENGTH_ALLOWED) {
@@ -46,12 +46,12 @@ module.exports = class Replacer {
 
     const result = rules[properties.shift()];
     return result;
-  };
+  }
 
-  #_mergeReplacementRules = (newRules) => {
+  #_mergeReplacementRules(newRules) {
     this.rules = {
       ...this.rules,
       ...newRules,
     };
-  };
+  }
 };

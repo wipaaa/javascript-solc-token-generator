@@ -13,7 +13,7 @@ module.exports = class Provider {
     this.instance = null;
   }
 
-  connect = async (option = {}) => {
+  async connect(option = {}) {
     const {
       privateKeys = [WEB3_ACC_PRIVATE_KEY],
       providerOrUrl = WEB3_PROVIDER_LOCAL,
@@ -29,9 +29,9 @@ module.exports = class Provider {
     this.instance.defaultAccount = WEB3_ACC_ADDRESS;
 
     return this;
-  };
+  }
 
-  deploy = async (source, option = {}) => {
+  async deploy(source, option = {}) {
     if (typeof source !== 'object') {
       const message = 'Expected contract parameter to be object.';
       throw new ContractError(message);
@@ -44,7 +44,7 @@ module.exports = class Provider {
 
     const { from = null, gas = null, gasPrice = null } = option;
 
-    const { abi, bytecode, metadata } = source;
+    const { abi, bytecode } = source;
     const contract = new this.instance.eth.Contract(abi);
 
     // gas and gas price estimation
@@ -64,18 +64,18 @@ module.exports = class Provider {
       });
 
     return { bytecode, receipt };
-  };
+  }
 
-  disconnect = () => {
+  disconnect() {
     if (!this.instance.currentProvider) {
       return null;
     }
 
     this.instance.currentProvider.engine.stop();
     return null;
-  };
+  }
 
-  #_getGasEstimation = async (bytecode, address) => {
+  async #_getGasEstimation(bytecode, address) {
     const from = address ?? this.accounts[0];
     const data = bytecode;
 
@@ -85,10 +85,10 @@ module.exports = class Provider {
     });
 
     return gas;
-  };
+  }
 
-  #_getGasPrice = async () => {
+  async #_getGasPrice() {
     const gasPrice = await this.instance.eth.getGasPrice();
     return gasPrice;
-  };
+  }
 };

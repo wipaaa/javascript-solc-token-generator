@@ -8,25 +8,25 @@ module.exports = class Verifier {
     };
   }
 
-  setBlockchainedBytecode = (bytecode) => {
+  setBlockchainedBytecode(bytecode) {
     if (!bytecode) {
       const message = 'Please provide a valid blockchained bytecode.';
       throw new TypeError(message);
     }
 
     return this.#_setBytecode('blockchain', bytecode);
-  };
+  }
 
-  setCompiledBytecode = (bytecode) => {
+  setCompiledBytecod(bytecode) {
     if (!bytecode) {
       const message = 'Please provide a valid compiled bytecode.';
       throw new TypeError(message);
     }
 
     return this.#_setBytecode('compiled', bytecode);
-  };
+  }
 
-  verify = () => {
+  verify() {
     const solcMinor = parseInt(
       SOLC_VERSION.match(/v\d+?\.\d+?\.\d+?[+-]/gi)[0]
         .match(/\.\d+/g)[0]
@@ -56,9 +56,9 @@ module.exports = class Verifier {
     );
 
     return processedBlockchainBytecode === processedCompiledBytecode;
-  };
+  }
 
-  #_processBytecode = (bytecode, minor, patch) => {
+  #_processBytecode(bytecode, minor, patch) {
     const MIN_MINOR_VERSION = 4;
     const SWARM_HASH = 'a165627a7a72305820';
 
@@ -81,10 +81,10 @@ module.exports = class Verifier {
     }
 
     return bytecode;
-  };
+  }
 
-  #_setBytecode = (status, bytecode) => {
+  #_setBytecode(status, bytecode) {
     this.bytecode[status] = bytecode;
     return this;
-  };
+  }
 };

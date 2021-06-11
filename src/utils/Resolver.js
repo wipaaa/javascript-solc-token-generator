@@ -20,7 +20,7 @@ module.exports = class Resolver {
     };
   }
 
-  setFrom = (pathToDirectory) => {
+  setFrom(pathToDirectory) {
     if (this.#_isNotExists(pathToDirectory)) {
       throw new NotFoundError(`Directory isn't exists at: ${pathToDirectory}.`);
     }
@@ -33,28 +33,34 @@ module.exports = class Resolver {
     });
 
     return this;
-  };
+  }
 
-  resolve = () => {
+  resolve() {
     // while path to the file is not specified, we'll asume
     // that u want to resolve the file from the sources
     // provided by calling the 'from' method.
     this.#_resolveFromSources();
     return this.#_pullSources();
-  };
+  }
 
-  #_getActualPath = (...pathSegments) => path.resolve('src', ...pathSegments);
+  #_getActualPath(...pathSegments) {
+    return path.resolve('src', ...pathSegments);
+  }
 
-  #_getFormattedFilename = (filename) => {
+  #_getFormattedFilename(filename) {
     const { from, to } = this.defaults.extension;
     return filename.replace(from, to);
-  };
+  }
 
-  #_isNotExists = (pathTo) => !fs.existsSync(this.#_getActualPath(pathTo));
+  #_isNotExists(pathTo) {
+    return !fs.existsSync(this.#_getActualPath(pathTo));
+  }
 
-  #_mergeWithDefaultData = (newData) => ({ ...this.defaults.data, ...newData });
+  #_mergeWithDefaultData(newData) {
+    return { ...this.defaults.data, ...newData };
+  }
 
-  #_pullSources = () => {
+  #_pullSources() {
     if (!this.sources.length) {
       return this.sources;
     }
@@ -63,23 +69,23 @@ module.exports = class Resolver {
     this.sources = [];
 
     return sources;
-  };
+  }
 
-  #_readContentFrom = (pathToFile) => {
+  #_readContentFrom(pathToFile) {
     const { charset } = this.defaults;
     const actualPath = this.#_getActualPath(pathToFile);
 
     return fs.readFileSync(actualPath, charset).toString();
-  };
+  }
 
-  #_readFilesFrom = (pathToDirectory, callback) => {
+  #_readFilesFrom(pathToDirectory, callback) {
     const { charset } = this.defaults;
     const actualPath = this.#_getActualPath(pathToDirectory);
 
     return fs.readdirSync(actualPath, charset).map(callback);
-  };
+  }
 
-  #_resolveFromSources = () => {
+  #_resolveFromSources() {
     if (!this.sources.length) {
       return null;
     }
@@ -90,5 +96,5 @@ module.exports = class Resolver {
     });
 
     return null;
-  };
+  }
 };

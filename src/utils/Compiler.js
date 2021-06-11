@@ -17,7 +17,7 @@ module.exports = class Compiler {
     this.sources = [];
   }
 
-  compile = (source = null) => {
+  compile(source = null) {
     if (source && !Array.isArray(source)) {
       const message = 'Compiling is only support array sources.';
       throw new CompilerError(message);
@@ -41,9 +41,9 @@ module.exports = class Compiler {
     this.#_compile();
 
     return this.#_pullResult();
-  };
+  }
 
-  setReplacer = (replacer) => {
+  setReplacer(replacer) {
     if (replacer instanceof Replacer) {
       this.replacer = replacer;
       return this;
@@ -51,12 +51,12 @@ module.exports = class Compiler {
 
     const message = 'Your replacer must be follow the Replacer instance.';
     throw new ReplacerError(message);
-  };
+  }
 
-  setRules = (rules) => {
+  setRules(rules) {
     this.replacer.setRules(rules);
     return this;
-  };
+  }
 
   setSources = (sources) => {
     if (!Array.isArray(sources)) {
@@ -75,7 +75,7 @@ module.exports = class Compiler {
     return this;
   };
 
-  #_compile = () => {
+  #_compile() {
     if (!this.compiler) {
       const message = 'Please provide any compiler to compile the sources.';
       throw new CompilerError(message);
@@ -98,9 +98,9 @@ module.exports = class Compiler {
         metadata: JSON.parse(selected.metadata),
       };
     }
-  };
+  }
 
-  #_compileFromSources = () => {
+  #_compileFromSources() {
     if (!this.sources.length) {
       return null;
     }
@@ -113,28 +113,28 @@ module.exports = class Compiler {
     });
 
     return null;
-  };
+  }
 
-  #_compileSourceContent = (source) => {
+  #_compileSourceContent(source) {
     const compiled = this.replacer.replace(source);
     return compiled;
-  };
+  }
 
-  #_pullResult = () => {
+  #_pullResult() {
     const { result } = this;
     this.result = {};
 
     return result;
-  };
+  }
 
-  #_pullSources = () => {
+  #_pullSources() {
     const { sources } = this;
     this.sources = [];
 
     return sources;
-  };
+  }
 
-  #_resolveInput = () => {
+  #_resolveInput() {
     const sources = this.#_pullSources();
 
     if (!sources.length) {
@@ -147,5 +147,5 @@ module.exports = class Compiler {
     });
 
     return null;
-  };
+  }
 };
